@@ -10,8 +10,8 @@ import json
 
 from app import settings
 from app.db_engine import engine
-from app.models.user_model import Product, ProductUpdate
-from app.crud.user_crud import add_new_product, get_all_products, get_product_by_id, delete_product_by_id, update_product_by_id
+from app.models.user_model import User,UserPublic,UserCreate #ProductUpdate
+from app.crud.user_crud import create_user
 from app.deps import get_session, get_kafka_producer
 
 def create_db_and_tables() -> None:
@@ -35,14 +35,14 @@ async def consume_messages(topic, bootstrap_servers):
             print("RAW")
             print(f"Received message on topic {message.topic}")
 
-            product_data = json.loads(message.value.decode())
-            print("TYPE", (type(product_data)))
-            print(f"Product Data {product_data}")
+            user_data = json.loads(message.value.decode())
+            print("TYPE", (type(user_data)))
+            print(f"User Data {user_data}")
 
             with next(get_session()) as session:
                 print("SAVING DATA TO DATABSE")
-                db_insert_product = add_new_product(
-                    product_data=Product(**product_data), session=session)
+                db_insert_product = create_user(
+                    user_data=UserCreate(**user_data), session=session)
                 print("DB_INSERT_PRODUCT", db_insert_product)
 
             # Here you can add code to process each message.
@@ -76,51 +76,52 @@ def read_root():
     return {"Hello": "Product Service"}
 
 
-@app.post("/manage-products/", response_model=Product)
-async def create_new_product(product: Product, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+@app.post("/register-user/", response_model=UserPublic)
+async def create_new_product(user: UserCreate, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
     """ Create a new product and send it to Kafka"""
     
-    product_dict = {field: getattr(product, field) for field in product.dict()}
-    product_json = json.dumps(product_dict).encode("utf-8")
-    print("product_JSON:", product_json)
+    # product_dict = {field: getattr(user, field) for field in product.dict()}
+    user_dict = user.__dict__
+    user_json = json.dumps(user_dict).encode("utf-8")
+    print("product_JSON:", user_json)
     # Produce message
-    await producer.send_and_wait(settings.KAFKA_PRODUCT_TOPIC, product_json)
+    await producer.send_and_wait(settings.KAFKA_USER_TOPIC, user_json)
     # new_product = add_new_product(product, session)
-    return product
+    return user 
 
-@app.get("/manage-products/all", response_model=list[Product])
-def call_all_products(session: Annotated[Session, Depends(get_session)]):
-    """ Get all products from the database"""
-    return get_all_products(session)
+# @app.get("/manage-products/all", response_model=list[Product])
+# def call_all_products(session: Annotated[Session, Depends(get_session)]):
+#     """ Get all products from the database"""
+#     return get_all_products(session)
 
-@app.get("/manage-products/{product_id}", response_model=Product)
-def get_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
-    """ Get a single product by ID"""
-    try:
-        return get_product_by_id(product_id=product_id, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.get("/manage-products/{product_id}", response_model=Product)
+# def get_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
+#     """ Get a single product by ID"""
+#     try:
+#         return get_product_by_id(product_id=product_id, session=session)
+#     except HTTPException as e:
+#         raise e
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/manage-products/{product_id}", response_model=dict)
-def delete_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
+# @app.delete("/manage-products/{product_id}", response_model=dict)
+# def delete_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
     
     
-    """ Delete a single product by ID"""
-    try:
-        return delete_product_by_id(product_id=product_id, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     """ Delete a single product by ID"""
+#     try:
+#         return delete_product_by_id(product_id=product_id, session=session)
+#     except HTTPException as e:
+#         raise e
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
     
-@app.patch("/manage-products/{product_id}", response_model=Product)
-def update_single_product(product_id: int, product: ProductUpdate, session: Annotated[Session, Depends(get_session)]):
-    """ Update a single product by ID"""
-    try:
-        return update_product_by_id(product_id=product_id, to_update_product_data=product, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.patch("/manage-products/{product_id}", response_model=Product)
+# def update_single_product(product_id: int, product: ProductUpdate, session: Annotated[Session, Depends(get_session)]):
+#     """ Update a single product by ID"""
+#     try:
+#         return update_product_by_id(product_id=product_id, to_update_product_data=product, session=session)
+#     except HTTPException as e:
+#         raise e
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))

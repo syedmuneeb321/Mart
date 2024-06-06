@@ -1,38 +1,34 @@
 from sqlmodel import SQLModel, Field, Relationship
+from datetime import datetime,timedelta,timezone
+import enum
 
-class Product(SQLModel, table=True):
+class Role(str,enum.Enum):
+    admin = "admin"
+    customer = "customer"
+
+
+class BaseUser(SQLModel):
+    user_name: str = Field(index=True,unique=True)
+    email: str = Field(index=True,unique=True)
+    
+    role: Role = Field(default=Role.customer)
+
+class User(BaseUser, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    name: str
-    description: str
-    price: float
-    expiry: str | None = None
-    brand: str | None = None
-    weight: float | None = None
-    category: str # It shall be pre defined by Platform
-    sku: str | None = None
-    rating: list["ProductRating"] = Relationship(back_populates="product")
-    # image: str # Multiple | URL Not Media | One to Manu Relationship
-    # quantity: int | None = None # Shall it be managed by Inventory Microservice
-    # color: str | None = None # One to Manu Relationship
-    # rating: float | None = None # One to Manu Relationship
-    
-    
-class ProductRating(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    product_id: int = Field(foreign_key="product.id")
-    rating: int
-    review: str | None = None
-    product:Product = Relationship(back_populates="rating")
-    
-    # user_id: int # One to Manu Relationship
+    password: str 
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime | None = Field(default_factory=datetime.now,sa_column_kwargs={"onupdate":datetime.now})
+
+class UserCreate(BaseUser):
+    password: str  
+
+class UserPublic(BaseUser):
+    # id: int 
+    pass
+
+
     
 
-class ProductUpdate(SQLModel):
-    name: str | None = None
-    description: str | None = None
-    price: float | None = None
-    expiry: str | None = None
-    brand: str | None = None
-    weight: float | None = None
-    category: str | None = None
-    sku: str | None = None
+
+    
+    
