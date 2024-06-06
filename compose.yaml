@@ -18,6 +18,20 @@ services:
     ports:
       - "8005:8000" # Expose container port 8000 to host port 8000
 
+  user-service:
+    image: user-mart-api
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./user-service:/code # Sync local development directory with the container
+    depends_on:
+      - broker
+      - postgres_user_db
+    ports:
+      - "8000:8000" # Expose container port 8000 to host port 8000
+
+
 
   postgres_product_db:
     image: postgres:latest # Use the official PostgreSQL image
@@ -31,6 +45,19 @@ services:
       - "5481:5432"
     volumes:
       - postgres_product_db:/var/lib/postgresql/data
+
+  postgres_user_db:
+    image: postgres:latest # Use the official PostgreSQL image
+    restart: always
+    container_name: PostgresUserCont
+    environment:
+      - POSTGRES_USER=ziakhan
+      - POSTGRES_PASSWORD=my_password
+      - POSTGRES_DB=mydatabase
+    ports:
+      - "5482:5432"
+    volumes:
+      - postgres_user_db:/var/lib/postgresql/data
 
   broker:
     image: apache/kafka:3.7.0
@@ -67,9 +94,11 @@ services:
       - broker
 
 volumes:
-  
+  postgres_user_db:
+    driver: local
   postgres_product_db:
     driver: local
+  
 
 networks:
   default:
