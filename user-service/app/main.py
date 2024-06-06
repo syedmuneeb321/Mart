@@ -23,7 +23,7 @@ async def consume_messages(topic, bootstrap_servers):
     consumer = AIOKafkaConsumer(
         topic,
         bootstrap_servers=bootstrap_servers,
-        group_id="my-prodocct-consumer-group",
+        group_id=settings.KAFKA_CONSUMER_GROUP_ID_FOR_USER,
         # auto_offset_reset="earliest",
     )
 
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("Creating table!")
 
     task = asyncio.create_task(consume_messages(
-        settings.KAFKA_PRODUCT_TOPIC, 'broker:19092'))
+        settings.KAFKA_USER_TOPIC, 'broker:19092'))
     create_db_and_tables()
     yield
 
