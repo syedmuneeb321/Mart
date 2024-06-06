@@ -15,14 +15,14 @@ RUN apt-get update && apt-get install -y \
 RUN pip install poetry
 
 # Copy the current directory contents into the container at /code
-COPY . /code/
+COPY pyproject.toml /code/pyproject.toml
 
 # Configuration to avoid creating virtual environments inside the Docker container
 RUN poetry config virtualenvs.create false
 
 # Install dependencies including development ones
 RUN poetry install
-
+COPY . /code/
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
 
