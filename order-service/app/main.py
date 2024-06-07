@@ -11,7 +11,7 @@ import json
 
 from app import settings
 from app.db_engine import engine
-from app.models.order_model import Address
+from app.models.order_model import Address,Order
 from app.crud.order_crud import create_address
 from app.deps import get_session, get_kafka_producer
 
@@ -60,6 +60,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     task = asyncio.create_task(consume_messages(
         settings.KAFKA_ORDER_TOPIC, 'broker:19092'))
+    task = asyncio.create_task(consume_messages(
+        "address-topic", 'broker:19092'))
+    
     create_db_and_tables()
     yield
 
@@ -78,7 +81,7 @@ def read_root():
 
 
 @app.post("/add-address/", response_model=Address)
-async def address(address: Address, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+async def generate_address(address: Address, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
     """ Create a new product and send it to Kafka"""
     
     address_dict = {field: getattr(address, field) for field in address.dict()}
@@ -87,15 +90,25 @@ async def address(address: Address, session: Annotated[Session, Depends(get_sess
     
     print("product_JSON:", address_json)
     # Produce message
-    await producer.send_and_wait(settings.KAFKA_ORDER_TOPIC, address_json)
+    await producer.send_and_wait("address-topic", address_json)
     
     return address
 
-# @app.post("/user-login",response_model=UserPublic)
-# def login(form_data:Annotated[OAuth2PasswordRequestForm,Depends(OAuth2PasswordRequestForm)],session: Annotated[Session, Depends(get_session)]):
-#     """ Get all products from the database"""
-#     user = user_login(form_data=form_data,session=session)
-#     return user
+
+@app.post("/create-order/")
+async def order_generate(order: Order, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+    """ Create a new product and send it to Kafka"""
+    
+    order_dict = {field: getattr(order, field) for field in order.dict()}
+   
+    order_json = json.dumps(order_dict).encode("utf-8")
+    
+    print("product_JSON:", order_json)
+    # Produce message
+    await producer.send_and_wait(settings.KAFKA_ORDER_TOPIC, order_json)
+    
+    return order
+
 
 # @app.get("/manage-products/{product_id}", response_model=Product)
 # def get_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
