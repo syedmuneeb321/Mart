@@ -49,3 +49,8 @@ asyncio.create_task(consume_messages())
 ```
 
 https://github.com/aio-libs/aiokafka
+
+
+
+## hide unneccery file in vs code 
+https://stackoverflow.com/questions/30140112/how-to-hide-specified-files-directories-e-g-git-in-the-sidebar-vscode

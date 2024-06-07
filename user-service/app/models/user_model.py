@@ -17,14 +17,13 @@ class User(BaseUser, table=True):
     id: int | None = Field(default=None, primary_key=True)
     password: str 
     created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime | None = Field(default_factory=datetime.now,sa_column_kwargs={"onupdate":datetime.now})
+    updated_at: datetime | None = Field(default_factory=datetime.utcnow,sa_column_kwargs={"onupdate":datetime.now})
 
 class UserCreate(BaseUser):
     password: str  
 
 class UserPublic(BaseUser):
-    # id: int 
-    pass
+    id: int 
 
 
     
