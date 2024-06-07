@@ -11,8 +11,8 @@ import json
 
 from app import settings
 from app.db_engine import engine
-# from app.models.user_model import User,UserPublic,UserCreate #ProductUpdate
-# from app.crud.user_crud import create_user,user_login
+from app.models.order_model import Address
+from app.crud.order_crud import create_address
 from app.deps import get_session, get_kafka_producer
 
 def create_db_and_tables() -> None:
@@ -36,9 +36,9 @@ async def consume_messages(topic, bootstrap_servers):
             print("RAW")
             print(f"Received message on topic {message.topic}")
 
-            user_data = json.loads(message.value.decode())
-            print("TYPE", (type(user_data)))
-            print(f"User Data {user_data}")
+            order_data = json.loads(message.value.decode())
+            print("TYPE", (type(order_data)))
+            print(f"User Data {order_data}")
 
             with next(get_session()) as session:
                 print("SAVING DATA TO DATABSE")
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     task = asyncio.create_task(consume_messages(
         settings.KAFKA_ORDER_TOPIC, 'broker:19092'))
-    # create_db_and_tables()
+    create_db_and_tables()
     yield
 
 
@@ -77,18 +77,19 @@ def read_root():
     return {"Hello": "order Service"}
 
 
-# @app.post("/register-user/", response_model=UserPublic)
-# async def create_new_product(user: UserCreate, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
-#     """ Create a new product and send it to Kafka"""
+@app.post("/add-address/", response_model=Address)
+async def address(address: Address, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+    """ Create a new product and send it to Kafka"""
     
-#     # product_dict = {field: getattr(user, field) for field in product.dict()}
-#     user_dict = user.__dict__
-#     user_json = json.dumps(user_dict).encode("utf-8")
-#     print("product_JSON:", user_json)
-#     # Produce message
-#     await producer.send_and_wait(settings.KAFKA_USER_TOPIC, user_json)
-#     # new_product = add_new_product(product, session)
-#     return user 
+    address_dict = {field: getattr(address, field) for field in address.dict()}
+   
+    address_json = json.dumps(address_dict).encode("utf-8")
+    
+    print("product_JSON:", address_json)
+    # Produce message
+    await producer.send_and_wait(settings.KAFKA_ORDER_TOPIC, address_json)
+    
+    return address
 
 # @app.post("/user-login",response_model=UserPublic)
 # def login(form_data:Annotated[OAuth2PasswordRequestForm,Depends(OAuth2PasswordRequestForm)],session: Annotated[Session, Depends(get_session)]):

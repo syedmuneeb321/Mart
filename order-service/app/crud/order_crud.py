@@ -1,28 +1,41 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
-from app.models.user_model import User,UserCreate #ProductUpdate
-from app.utils.security import verify_password,get_password_hash
+from app.models.order_model import Address
+
+
+# # Add a New Product to the Database
+# def create_user(user_data: UserCreate, session: Session):
+#     print("Adding user to Database")
+#     hashed_password = get_password_hash(user_data.password)
+#     user_data = User.model_validate(user_data,update={"password":hashed_password})
+#     session.add(user_data)
+#     session.commit()
+#     session.refresh(user_data)
+#     return user_data
 
 
 # Add a New Product to the Database
-def create_user(user_data: UserCreate, session: Session):
+def create_address(address_data: Address, session: Session):
     print("Adding user to Database")
-    hashed_password = get_password_hash(user_data.password)
-    user_data = User.model_validate(user_data,update={"password":hashed_password})
-    session.add(user_data)
+    # hashed_password = get_password_hash(user_data.password)
+    # user_data = User.model_validate(user_data,update={"password":hashed_password})
+    session.add(address_data)
     session.commit()
-    session.refresh(user_data)
-    return user_data
+    session.refresh(address_data)
+    return address_data
+
+
+
 
 # # Get All Products from the Database
-def user_login(form_data:dict,session: Session):
-    user_in_db = session.exec(select(User).where(User.user_name == form_data.username)).first()
-    if not user_in_db:
-        raise HTTPException(status_code=404,detail="invalid credentials")
-    if not verify_password(form_data.password,user_in_db.password):
-        raise HTTPException(status_code=404,detail="invalid credientials")
+# def user_login(form_data:dict,session: Session):
+#     user_in_db = session.exec(select(User).where(User.user_name == form_data.username)).first()
+#     if not user_in_db:
+#         raise HTTPException(status_code=404,detail="invalid credentials")
+#     if not verify_password(form_data.password,user_in_db.password):
+#         raise HTTPException(status_code=404,detail="invalid credientials")
     
-    return user_in_db 
+#     return user_in_db 
     
     # all_products = session.exec(select(Product)).all()
     # return all_products

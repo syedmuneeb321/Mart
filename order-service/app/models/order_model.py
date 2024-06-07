@@ -8,7 +8,9 @@ class Address(SQLModel,table=True):
     city: str 
     country: str 
     zipcode: int 
-    order_id: int = Field(foreign_key="order.id")
+    
+    user_id: int 
+    order_id: int| None = Field(default=None,foreign_key="order.id")
     orders: List["Order"] = Relationship(back_populates="address")
 
 
@@ -25,7 +27,7 @@ class Order(SQLModel,table=True):
     customer_id: int 
     # orders: 
     total_price: float 
-    address: Address = Relationship(back_populates="address")
+    address: Address = Relationship(back_populates="orders")
 
 
     
