@@ -1,5 +1,10 @@
 challenge no1 
-2 consumer kese cahle ge aik micro service example order aur address topic producer and consumer 
+2 consumer kese run kare  ge aik micro service example order aur address topic producer and consumer 
+
+solution:
+    seperate consumer ka use karke run kare ge
+
+
 
 challenge no2 
 order items pehle add hoge ya phr order 

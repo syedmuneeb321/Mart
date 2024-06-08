@@ -186,9 +186,9 @@ def update_payment_status(order_id:int,payment_status:PaymentStatus,session: Ann
         
 
 @app.patch("/cancel-order")
-def order_cancel(order_id:int,order_status:OrderStatus,session: Annotated[Session, Depends(get_session)]):
+def order_cancel(order_id:int,session: Annotated[Session, Depends(get_session)]):
     try:
-        # order_status = "cancelled"
+        order_status:OrderStatus.cancelled
         return order_status_update(order_id=order_id,order_status=order_status,session=session)
     except HTTPException as e:
         e 
