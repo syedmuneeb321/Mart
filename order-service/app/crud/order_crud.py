@@ -1,28 +1,48 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
-from app.models.order_model import Address
+from app.models.order_model import Address,Order,OrderStatus,PaymentStatus
 
 
-# # Add a New Product to the Database
-# def create_user(user_data: UserCreate, session: Session):
-#     print("Adding user to Database")
-#     hashed_password = get_password_hash(user_data.password)
-#     user_data = User.model_validate(user_data,update={"password":hashed_password})
-#     session.add(user_data)
-#     session.commit()
-#     session.refresh(user_data)
-#     return user_data
+# Add a New order to the Database
+def create_order(order_data: Order, session: Session):
+    print("Adding order to Database")
+    session.add(order_data)
+    session.commit()
+    session.refresh(order_data)
+    return order_data
 
 
-# Add a New Product to the Database
+# Add a New address to the Database
 def create_address(address_data: Address, session: Session):
-    print("Adding user to Database")
-    # hashed_password = get_password_hash(user_data.password)
-    # user_data = User.model_validate(user_data,update={"password":hashed_password})
+    print("Adding address to Database")
+    
     session.add(address_data)
     session.commit()
     session.refresh(address_data)
     return address_data
+
+
+def get_customer_orders(customer_id: int,session:Session):
+    orders = session.exec(select(Order).where(Order.customer_id==customer_id)).all()
+    return orders
+
+
+
+def order_status_update(order_id:int,order_status:OrderStatus,session:Session):
+    order = session.get(Order,order_id)
+    order.status = order_status
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    return order
+    
+def order_peyment_update(order_id:int,order_payment_status:PaymentStatus,session:Session):
+    order = session.get(Order,order_id)
+    order.payment_status = order_payment_status
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    return order
 
 
 

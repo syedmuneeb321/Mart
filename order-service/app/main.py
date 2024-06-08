@@ -11,23 +11,23 @@ import json
 
 from app import settings
 from app.db_engine import engine
-from app.models.order_model import Address,Order
-from app.crud.order_crud import create_address
+from app.models.order_model import Address,Order,OrderStatus,PaymentStatus
+from app.crud.order_crud import create_address,create_order,get_customer_orders,order_status_update,order_peyment_update
 from app.deps import get_session, get_kafka_producer
 
 def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
 
 
-async def consume_messages(topic, bootstrap_servers):
+async def consume_address(topic,bootstrap_servers,group_id):
     # Create a consumer instance.
     consumer = AIOKafkaConsumer(
         topic,
         bootstrap_servers=bootstrap_servers,
-        group_id=settings.KAFKA_CONSUMER_GROUP_ID_FOR_ORDER,
+        group_id=group_id,
         # auto_offset_reset="earliest",
     )
-
+    print(f"life span send topic:{topic}")
     # Start the consumer.
     await consumer.start()
     try:
@@ -37,16 +37,58 @@ async def consume_messages(topic, bootstrap_servers):
             print(f"Received message on topic {message.topic}")
 
             order_data = json.loads(message.value.decode())
-            print("TYPE", (type(order_data)))
-            print(f"User Data {order_data}")
+            # print("TYPE", (type(order_data)))
+            print(f"Data {order_data}")
+            
+            with next(get_session()) as session:
+                print("SAVING Address DATA TO DATABSE")
+                db_insert_address = create_address(
+                    address_data=Address(**order_data), session=session)
+                print("DB_INSERT_PRODUCT", db_insert_address)
+    finally:
+        # Ensure to close the consumer when done.
+        await consumer.stop()
+
+
+
+async def consume_messages(topic, bootstrap_servers,group_id):
+    # Create a consumer instance.
+    consumer = AIOKafkaConsumer(
+        topic,
+        bootstrap_servers=bootstrap_servers,
+        group_id=group_id,
+        # auto_offset_reset="earliest",
+    )
+    print(f"life span send topic:{topic}")
+    # Start the consumer.
+    await consumer.start()
+    try:
+        # Continuously listen for messages.
+        async for message in consumer:
+            print("RAW")
+            print(f"Received message on topic {message.topic}")
+
+            order_data = json.loads(message.value.decode())
+            # print("TYPE", (type(order_data)))
+            print(f"Data {order_data}")
+            
+            # with next(get_session()) as session:
+            #     print("SAVING Address DATA TO DATABSE")
+            #     db_insert_address = create_address(
+            #         address_data=Address(**order_data), session=session)
+            #     print("DB_INSERT_PRODUCT", db_insert_address)
+
+            
 
             with next(get_session()) as session:
-                print("SAVING DATA TO DATABSE")
-                # db_insert_product = create_user(
-                #     user_data=UserCreate(**user_data), session=session)
-                # print("DB_INSERT_PRODUCT", db_insert_product)
+                print("SAVING order DATA TO DATABSE ")
 
-            # Here you can add code to process each message.
+                db_insert_order = create_order(
+                    order_data=Order(**order_data), session=session)
+
+                print("DB_INSERT_PRODUCT", db_insert_order)
+
+            
             # Example: parse the message, store it in a database, etc.
     finally:
         # Ensure to close the consumer when done.
@@ -58,10 +100,10 @@ async def consume_messages(topic, bootstrap_servers):
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("Creating table!")
 
-    task = asyncio.create_task(consume_messages(
-        settings.KAFKA_ORDER_TOPIC, 'broker:19092'))
-    task = asyncio.create_task(consume_messages(
-        "address-topic", 'broker:19092'))
+    order_task = asyncio.create_task(consume_messages(
+        "order-events", 'broker:19092',"order-group"))
+    address_task = asyncio.create_task(consume_address(
+        "address-topic", 'broker:19092',"address-group"))
     
     create_db_and_tables()
     yield
@@ -88,7 +130,7 @@ async def generate_address(address: Address, session: Annotated[Session, Depends
    
     address_json = json.dumps(address_dict).encode("utf-8")
     
-    print("product_JSON:", address_json)
+    print("address_JSON:", address_json)
     # Produce message
     await producer.send_and_wait("address-topic", address_json)
     
@@ -103,22 +145,57 @@ async def order_generate(order: Order, session: Annotated[Session, Depends(get_s
    
     order_json = json.dumps(order_dict).encode("utf-8")
     
-    print("product_JSON:", order_json)
+    print("order_JSON:", order_json)
     # Produce message
     await producer.send_and_wait(settings.KAFKA_ORDER_TOPIC, order_json)
     
     return order
 
 
-# @app.get("/manage-products/{product_id}", response_model=Product)
-# def get_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
-#     """ Get a single product by ID"""
-#     try:
-#         return get_product_by_id(product_id=product_id, session=session)
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+@app.get("/my-orders/")
+def get_orders(customer_id: int, session: Annotated[Session, Depends(get_session)]):
+    """ Get a single product by ID"""
+    try:
+        return get_customer_orders(customer_id=customer_id, session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/update-order-status")
+def update_order_status(order_id:int,order_status:OrderStatus,session: Annotated[Session, Depends(get_session)]):
+
+    try:
+        return order_status_update(order_id=order_id,order_status=order_status,session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+
+@app.patch("/update-payment-status")
+def update_payment_status(order_id:int,payment_status:PaymentStatus,session: Annotated[Session, Depends(get_session)]):
+
+    try:
+        return order_peyment_update(order_id=order_id,order_payment_status=payment_status,session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+
+@app.patch("/cancel-order")
+def order_cancel(order_id:int,order_status:OrderStatus,session: Annotated[Session, Depends(get_session)]):
+    try:
+        # order_status = "cancelled"
+        return order_status_update(order_id=order_id,order_status=order_status,session=session)
+    except HTTPException as e:
+        e 
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=str(e))
+
+    
 
 # @app.delete("/manage-products/{product_id}", response_model=dict)
 # def delete_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
