@@ -19,35 +19,35 @@ def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
 
 
-async def consume_address(topic,bootstrap_servers,group_id):
-    # Create a consumer instance.
-    consumer = AIOKafkaConsumer(
-        topic,
-        bootstrap_servers=bootstrap_servers,
-        group_id=group_id,
-        # auto_offset_reset="earliest",
-    )
-    print(f"life span send topic:{topic}")
-    # Start the consumer.
-    await consumer.start()
-    try:
-        # Continuously listen for messages.
-        async for message in consumer:
-            print("RAW")
-            print(f"Received message on topic {message.topic}")
+# async def consume_address(topic,bootstrap_servers,group_id):
+#     # Create a consumer instance.
+#     consumer = AIOKafkaConsumer(
+#         topic,
+#         bootstrap_servers=bootstrap_servers,
+#         group_id=group_id,
+#         # auto_offset_reset="earliest",
+#     )
+#     print(f"life span send topic:{topic}")
+#     # Start the consumer.
+#     await consumer.start()
+#     try:
+#         # Continuously listen for messages.
+#         async for message in consumer:
+#             print("RAW")
+#             print(f"Received message on topic {message.topic}")
 
-            order_data = json.loads(message.value.decode())
-            # print("TYPE", (type(order_data)))
-            print(f"Data {order_data}")
+#             order_data = json.loads(message.value.decode())
+#             # print("TYPE", (type(order_data)))
+#             print(f"Data {order_data}")
             
-            with next(get_session()) as session:
-                print("SAVING Address DATA TO DATABSE")
-                db_insert_address = create_address(
-                    address_data=Address(**order_data), session=session)
-                print("DB_INSERT_PRODUCT", db_insert_address)
-    finally:
-        # Ensure to close the consumer when done.
-        await consumer.stop()
+#             with next(get_session()) as session:
+#                 print("SAVING Address DATA TO DATABSE")
+#                 db_insert_address = create_address(
+#                     address_data=Address(**order_data), session=session)
+#                 print("DB_INSERT_PRODUCT", db_insert_address)
+#     finally:
+#         # Ensure to close the consumer when done.
+#         await consumer.stop()
 
 
 
@@ -81,12 +81,18 @@ async def consume_messages(topic, bootstrap_servers,group_id):
             
 
             with next(get_session()) as session:
-                print("SAVING order DATA TO DATABSE ")
+                if message.topic == "order-event":
+                    print("SAVING order DATA TO DATABSE ")
 
-                db_insert_order = create_order(
-                    order_data=Order(**order_data), session=session)
+                    # db_insert_order = create_order(
+                    #     order_data=Order(**order_data), session=session)
+                else:
+                    print("SAVING address DATA TO DATABSE ")
 
-                print("DB_INSERT_PRODUCT", db_insert_order)
+                    # db_insert_address = create_address(
+                    #     address_data=Address(**order_data), session=session)
+
+                    # print("DB_INSERT_PRODUCT", db_insert_order)
 
             
             # Example: parse the message, store it in a database, etc.
@@ -102,7 +108,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     order_task = asyncio.create_task(consume_messages(
         "order-events", 'broker:19092',"order-group"))
-    address_task = asyncio.create_task(consume_address(
+    address_task = asyncio.create_task(consume_messages(
         "address-topic", 'broker:19092',"address-group"))
     
     create_db_and_tables()

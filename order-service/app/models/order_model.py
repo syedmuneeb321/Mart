@@ -24,15 +24,15 @@ class Address(SQLModel,table=True):
     
     user_id: int 
     
-    orders: List["Order"] = Relationship(back_populates="address")
+#     orders: List["Order"] = Relationship(back_populates="address")
 
 
 
-# class orderItems(SQLModel,table=True):
-#     id: int| None = Field(default=None,primary_key=True)
-#     product_id: int 
-#     price: float  
-#     quantity: int 
+# # class orderItems(SQLModel,table=True):
+# #     id: int| None = Field(default=None,primary_key=True)
+# #     product_id: int 
+# #     price: float  
+# #     quantity: int 
 
 
 
