@@ -12,10 +12,11 @@ from typing import List
 
 from app import settings
 from app.db_engine import engine
-from app.models.inventory_model import InventoryItems
-from app.crud.inventory_crud import create_inventory_item,get_all_inventories
+from app.models.inventory_model import InventoryItems,InvetoryItemsUpdate
+from app.crud.inventory_crud import create_inventory_item,get_all_inventories,inventory_update,delete_invetory_item
 from app.deps import get_session, get_kafka_producer
 from app.consumer.inventory_consumer import consume_messages
+from app.consumer.inventory_update_consumer import consume_update_messages
 
 
 
@@ -44,10 +45,12 @@ def create_db_and_tables() -> None:
 # The first part of the function, before the yield, will
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    print("Creating tables...")
+    print("Creating tables....")
 
     inventory_task = asyncio.create_task(consume_messages(
         topic="inventory-add-stock-response", bootstrap_servers='broker:19092',group_id=settings.KAFKA_CONSUMER_GROUP_ID_FOR_INVENTORY))
+    update_invetory_task = asyncio.create_task(consume_update_messages(
+        topic="update-inventory-event", bootstrap_servers='broker:19092',group_id="consumer-update-group-id"))
   
     
     create_db_and_tables()
@@ -100,16 +103,36 @@ def get_all_inventory(session: Annotated[Session, Depends(get_session)]):
 
 
 
-# @app.patch("/update-order-status")
-# def update_order_status(order_id:int,order_status:OrderStatus,session: Annotated[Session, Depends(get_session)]):
+@app.patch("/update-inventory")
+async def update_inventory(inventory_id:UUID,item:InvetoryItemsUpdate,producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
 
-#     try:
-#         return order_status_update(order_id=order_id,order_status=order_status,session=session)
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+
+
+    try:
+        inventory_dict = {"id":str(inventory_id),"item":item.dict()}
+        inventory_json = json.dumps(inventory_dict).encode("utf-8")
+        print("producer > inventory json:",inventory_json)
+        await producer.send_and_wait("update-inventory-event",inventory_json)
+        # return inventory_update(item_id=inventory_id,item=item,session=session)
+        return item
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/delete-item/", response_model=dict)
+def detele_item(item_id:UUID, session: Annotated[Session, Depends(get_session)]):
+    """ Delete a single iventory item by ID"""
+    try:
+        return delete_invetory_item(item_id=item_id, session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
         
+
 
 # @app.patch("/update-payment-status")
 # def update_payment_status(order_id:int,payment_status:PaymentStatus,session: Annotated[Session, Depends(get_session)]):
@@ -134,17 +157,7 @@ def get_all_inventory(session: Annotated[Session, Depends(get_session)]):
 
     
 
-# @app.delete("/manage-products/{product_id}", response_model=dict)
-# def delete_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
-    
-    
-#     """ Delete a single product by ID"""
-#     try:
-#         return delete_product_by_id(product_id=product_id, session=session)
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+
     
 # @app.patch("/manage-products/{product_id}", response_model=Product)
 # def update_single_product(product_id: int, product: ProductUpdate, session: Annotated[Session, Depends(get_session)]):

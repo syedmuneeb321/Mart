@@ -12,3 +12,7 @@ class InventoryItems(SQLModel,table=True):
     product_id: int 
     quantity: int 
     
+
+
+class InvetoryItemsUpdate(SQLModel):
+    quantity: int|None = None 
