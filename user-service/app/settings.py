@@ -7,6 +7,10 @@ except FileNotFoundError:
     config = Config()
 
 DATABASE_URL = config("DATABASE_URL", cast=Secret)
+SECRET_KEY = config("SECRET_KEY", cast=str)
+ACCESS_TOKEN_EXPIRE_MINUTES = 60*24
+# REFRESH_TOKEN_EXPIRE_MINUTES = 200
+
 KAFKA_USER_TOPIC = config("KAFKA_USER_TOPIC", cast=str)
 
 BOOTSTRAP_SERVER = config("BOOTSTRAP_SERVER", cast=str)

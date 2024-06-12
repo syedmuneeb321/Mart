@@ -22,3 +22,9 @@ challenge no 2 solution
 Final Solution
 order items ko is waqat remove karde kiyu ke ye complex example hogi.
 sir order ka schema banaye  -->
+
+
+payment service -> order service
+for example payment status completed order-sevice listen and then update orderpament status is paid 
+payment service payment status complete hone par aik event producer kare gi thne 
+order service us payment ke event ko consumer karega aur apne database mein order pament status ko update kar ga

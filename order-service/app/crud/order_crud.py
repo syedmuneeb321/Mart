@@ -45,6 +45,11 @@ def order_peyment_update(order_id:int,order_payment_status:PaymentStatus,session
     return order
 
 
+def verify_order(order_id:int,session:Session):
+    order_exist: Order = session.get(Order,order_id)
+    if order_exist:
+        return order_exist
+
 
 
 # # Get All Products from the Database

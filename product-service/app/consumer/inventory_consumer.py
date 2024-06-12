@@ -50,6 +50,8 @@ async def consume_inventory_messages(topic, bootstrap_servers):
 
                     finally:
                         await producer.stop() 
+                else:
+                    print(f"")
                 
 
                     

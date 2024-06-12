@@ -15,101 +15,34 @@ from app.models.order_model import Address,Order,OrderStatus,PaymentStatus
 from app.crud.order_crud import create_address,create_order,get_customer_orders,order_status_update,order_peyment_update
 from app.deps import get_session, get_kafka_producer
 
+from app.consumer.payment_consumer import payment_varify_consumer
+from app.consumer.address_consumer import consume_address_messages
+from app.consumer.order_consumer import consume_order_messages
+from app.consumer.payment_status_consumer import payment_status_messages_consume
+
 def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
 
 
-# async def consume_address(topic,bootstrap_servers,group_id):
-#     # Create a consumer instance.
-#     consumer = AIOKafkaConsumer(
-#         topic,
-#         bootstrap_servers=bootstrap_servers,
-#         group_id=group_id,
-#         # auto_offset_reset="earliest",
-#     )
-#     print(f"life span send topic:{topic}")
-#     # Start the consumer.
-#     await consumer.start()
-#     try:
-#         # Continuously listen for messages.
-#         async for message in consumer:
-#             print("RAW")
-#             print(f"Received message on topic {message.topic}")
-
-#             order_data = json.loads(message.value.decode())
-#             # print("TYPE", (type(order_data)))
-#             print(f"Data {order_data}")
-            
-#             with next(get_session()) as session:
-#                 print("SAVING Address DATA TO DATABSE")
-#                 db_insert_address = create_address(
-#                     address_data=Address(**order_data), session=session)
-#                 print("DB_INSERT_PRODUCT", db_insert_address)
-#     finally:
-#         # Ensure to close the consumer when done.
-#         await consumer.stop()
 
 
 
-async def consume_messages(topic, bootstrap_servers,group_id):
-    # Create a consumer instance.
-    consumer = AIOKafkaConsumer(
-        topic,
-        bootstrap_servers=bootstrap_servers,
-        group_id=group_id,
-        # auto_offset_reset="earliest",
-    )
-    print(f"life span send topic:{topic}")
-    # Start the consumer.
-    await consumer.start()
-    try:
-        # Continuously listen for messages.
-        async for message in consumer:
-            print("RAW")
-            print(f"Received message on topic {message.topic}")
-
-            order_data = json.loads(message.value.decode())
-            # print("TYPE", (type(order_data)))
-            print(f"Data {order_data}")
-            
-            # with next(get_session()) as session:
-            #     print("SAVING Address DATA TO DATABSE")
-            #     db_insert_address = create_address(
-            #         address_data=Address(**order_data), session=session)
-            #     print("DB_INSERT_PRODUCT", db_insert_address)
-
-            
-
-            with next(get_session()) as session:
-                if message.topic == "order-event":
-                    print("SAVING order DATA TO DATABSE ")
-
-                    # db_insert_order = create_order(
-                    #     order_data=Order(**order_data), session=session)
-                else:
-                    print("SAVING address DATA TO DATABSE ")
-
-                    # db_insert_address = create_address(
-                    #     address_data=Address(**order_data), session=session)
-
-                    # print("DB_INSERT_PRODUCT", db_insert_order)
-
-            
-            # Example: parse the message, store it in a database, etc.
-    finally:
-        # Ensure to close the consumer when done.
-        await consumer.stop()
 
 
 # The first part of the function, before the yield, will
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    print("Creating table!")
+    print("Creating table.")
 
-    order_task = asyncio.create_task(consume_messages(
+    order_task = asyncio.create_task(consume_order_messages(
         "order-events", 'broker:19092',"order-group"))
-    address_task = asyncio.create_task(consume_messages(
+    address_task = asyncio.create_task(consume_address_messages(
         "address-topic", 'broker:19092',"address-group"))
+    verify_payment_task = asyncio.create_task(payment_varify_consumer(
+        "payment-event", 'broker:19092',"payment-verify-group"))
+    payment_status_task  = asyncio.create_task(payment_status_messages_consume(
+        "payment-status-topic", 'broker:19092',"payment-status-consumer-group"))
+    
     
     create_db_and_tables()
     yield

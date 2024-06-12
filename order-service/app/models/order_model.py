@@ -24,7 +24,7 @@ class Address(SQLModel,table=True):
     
     user_id: int 
     
-#     orders: List["Order"] = Relationship(back_populates="address")
+    orders: List["Order"] = Relationship(back_populates="address")
 
 
 
