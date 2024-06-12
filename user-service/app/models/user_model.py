@@ -27,6 +27,11 @@ class UserPublic(BaseUser):
     id: int 
 
 
+
+class UserUpdate(SQLModel):
+    user_name:str | None
+    email: str | None
+
     
 
 

@@ -12,7 +12,7 @@ import json
 from app import settings
 from app.db_engine import engine
 from app.models.user_model import User,UserPublic,UserCreate #ProductUpdate
-from app.crud.user_crud import create_user,user_login,role_assign_by_admin,CurrentUser,get_all_users
+from app.crud.user_crud import create_user,user_login,role_assign_by_admin,CurrentUser,get_all_users,update_user
 from app.deps import get_session, get_kafka_producer,DBSessionDep
 
 def create_db_and_tables() -> None:
@@ -89,12 +89,12 @@ def all_user(users:Annotated[UserPublic,Depends(get_all_users)]):
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
     
-# @app.patch("/manage-products/{product_id}", response_model=Product)
-# def update_single_product(product_id: int, product: ProductUpdate, session: Annotated[Session, Depends(get_session)]):
-#     """ Update a single product by ID"""
-#     try:
-#         return update_product_by_id(product_id=product_id, to_update_product_data=product, session=session)
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+@app.patch("/user-update/", response_model=UserPublic)
+def user_update(user: Annotated[UserPublic, Depends(update_user)]):
+    """ Update a single user inforamtion like email etc."""
+    try:
+        return user
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

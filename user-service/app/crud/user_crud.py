@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from datetime import timedelta
 from jose import jwt,JWTError
 
-from app.models.user_model import User,UserCreate,Role
+from app.models.user_model import User,UserCreate,UserUpdate,Role
 from app.utils.security import verify_password,get_password_hash,create_access_token,ALGORITHM
 from app.deps import DBSessionDep
 from app import settings
@@ -96,7 +96,22 @@ def get_all_users(session:DBSessionDep,user:CurrentUser):
     return users
 
 
-def update_user(user_data:,session:DBSessionDep)
+def update_user(user:CurrentUser,user_data:UserUpdate,session:DBSessionDep):
+    # todo 1 check username already exist then not update best practise not change user name
+    # todo 2 check email already exist then not change 
+    # todo 3 mostly userinformation change but username not
+    user_db = session.get(User,user.id)
+    print(user_db)
+    # if not user_db:
+    #     raise HTTPException(status_code=404,detail="user not found")
+    # data = user_data.model_dump(exclude_unset=True)   
+    # user_db.sqlmodel_update(data)
+    # session.add(user_db)
+    # session.commit()
+    # session.refresh(user_db)
+    # return user_db
+
+    
 
 # # Delete Product by ID
 # def delete_product_by_id(product_id: int, session: Session):
