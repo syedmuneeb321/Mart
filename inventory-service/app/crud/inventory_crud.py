@@ -17,10 +17,7 @@ def create_inventory_item(item: InventoryItems, session: Session):
 
 
 
-# create a get all inventory function
-def get_all_inventories(session:Session):
-    items = session.exec(select(InventoryItems)).all()
-    return items
+
 
 def inventory_update(item_id:UUID,item:InventoryItems,session:Session):
     db_item = session.get(InventoryItems,item_id)
@@ -40,3 +37,14 @@ def delete_invetory_item(item_id:UUID,session:Session):
     session.commit()
     return {"message": "Product Deleted Successfully"}
 
+
+# create a get all inventory function
+def get_all_inventories(session:Session):
+    items = session.exec(select(InventoryItems)).all()
+    return items
+
+def get_inventory_item(item_id:UUID,session:Session):
+    item = session.get(InventoryItems,item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="item not found")
+    return item

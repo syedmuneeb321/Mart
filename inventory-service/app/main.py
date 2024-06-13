@@ -13,7 +13,7 @@ from typing import List
 from app import settings
 from app.db_engine import engine
 from app.models.inventory_model import InventoryItems,InvetoryItemsUpdate
-from app.crud.inventory_crud import create_inventory_item,get_all_inventories,inventory_update,delete_invetory_item
+from app.crud.inventory_crud import create_inventory_item,get_all_inventories,inventory_update,delete_invetory_item,get_inventory_item
 from app.deps import get_session, get_kafka_producer,TokenDeps,DbSessionDeps,ProducerDeps
 from app.consumer.inventory_consumer import consume_messages
 from app.consumer.inventory_update_consumer import consume_update_messages
@@ -91,6 +91,45 @@ async def generate_inventory(inventory: InventoryItems, session: DbSessionDeps, 
 
 
 
+
+
+
+
+@app.patch("/update-inventory")
+async def update_inventory(inventory_id:UUID,item:InvetoryItemsUpdate,session: DbSessionDeps, producer: ProducerDeps,authenticate:TokenDeps):
+
+
+
+    if authenticate:
+        try:
+            inventory_dict = {"id":str(inventory_id),"item":item.dict()}
+            inventory_json = json.dumps(inventory_dict).encode("utf-8")
+            # print("producer > inventory json:",inventory_json)
+            await producer.send_and_wait("update-inventory-event",inventory_json)
+            # return inventory_update(item_id=inventory_id,item=item,session=session)
+            return item
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+    raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")
+
+
+@app.delete("/delete-item/", response_model=dict)
+def detele_item(item_id:UUID, session:DbSessionDeps,authenticate:TokenDeps):
+    """ Delete a single iventory item by ID"""
+    if authenticate:
+        try:
+            return delete_invetory_item(item_id=item_id, session=session)
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+    raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")
+
+
 @app.get("/all-inventory/",response_model=List[InventoryItems])
 def get_all_inventory(session: Annotated[Session, Depends(get_session)]):
     """ Get all inventory items"""
@@ -100,39 +139,15 @@ def get_all_inventory(session: Annotated[Session, Depends(get_session)]):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
-@app.patch("/update-inventory")
-async def update_inventory(inventory_id:UUID,item:InvetoryItemsUpdate,producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
-
-
-
-    try:
-        inventory_dict = {"id":str(inventory_id),"item":item.dict()}
-        inventory_json = json.dumps(inventory_dict).encode("utf-8")
-        print("producer > inventory json:",inventory_json)
-        await producer.send_and_wait("update-inventory-event",inventory_json)
-        # return inventory_update(item_id=inventory_id,item=item,session=session)
-        return item
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete("/delete-item/", response_model=dict)
-def detele_item(item_id:UUID, session: Annotated[Session, Depends(get_session)]):
-    """ Delete a single iventory item by ID"""
-    try:
-        return delete_invetory_item(item_id=item_id, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
         
-
+@app.get("/get-inventory-item")
+def get_item_inventory(item_id:UUID,session:DbSessionDeps):
+    try:
+        return get_inventory_item(item_id=item_id,session=session)
+    except HTTPException as e:
+        raise e 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # @app.patch("/update-payment-status")
 # def update_payment_status(order_id:int,payment_status:PaymentStatus,session: Annotated[Session, Depends(get_session)]):
