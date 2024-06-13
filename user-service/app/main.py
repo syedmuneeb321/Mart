@@ -89,7 +89,7 @@ def all_user(users:Annotated[UserPublic,Depends(get_all_users)]):
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
     
-@app.patch("/user-update/", response_model=UserPublic)
+@app.patch("/user-update/",response_model=UserPublic)
 def user_update(user: Annotated[UserPublic, Depends(update_user)]):
     """ Update a single user inforamtion like email etc."""
     try:
