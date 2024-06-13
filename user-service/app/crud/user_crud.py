@@ -101,16 +101,13 @@ def update_user(user:CurrentUser,user_data:UserUpdate,session:DBSessionDep):
     # todo 2 check email already exist then not change 
     # todo 3 mostly userinformation change but username not
     user_db = session.get(User,user.id)
-    print(user_db)
     if not user_db:
         raise HTTPException(status_code=404,detail="user not found")
     data = user_data.model_dump(exclude_unset=True)   
-    print("inside user update crud user_data:",data)
     user_db.sqlmodel_update(data)
     session.add(user_db)
     session.commit()
     session.refresh(user_db)
-    print("after update user profile :",user_db)
     return user_db
 
     

@@ -76,6 +76,20 @@ async def get_user_me(user:CurrentUser):
 def all_user(users:Annotated[UserPublic,Depends(get_all_users)]):
     return users
 
+@app.patch("/user-update/",response_model=UserPublic)
+def user_update(user: Annotated[UserPublic, Depends(update_user)]):
+    """ Update a single user inforamtion like email etc."""
+    try:
+        return user
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+# baqi functionallity bad mein kare ge user service ke related
 
 # @app.delete("/manage-products/{product_id}", response_model=dict)
 # def delete_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
@@ -89,12 +103,3 @@ def all_user(users:Annotated[UserPublic,Depends(get_all_users)]):
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
     
-@app.patch("/user-update/",response_model=UserPublic)
-def user_update(user: Annotated[UserPublic, Depends(update_user)]):
-    """ Update a single user inforamtion like email etc."""
-    try:
-        return user
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
