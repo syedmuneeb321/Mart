@@ -14,7 +14,7 @@ from app import settings
 from app.db_engine import engine
 from app.models.inventory_model import InventoryItems,InvetoryItemsUpdate
 from app.crud.inventory_crud import create_inventory_item,get_all_inventories,inventory_update,delete_invetory_item
-from app.deps import get_session, get_kafka_producer
+from app.deps import get_session, get_kafka_producer,TokenDeps,DbSessionDeps,ProducerDeps
 from app.consumer.inventory_consumer import consume_messages
 from app.consumer.inventory_update_consumer import consume_update_messages
 
@@ -72,18 +72,18 @@ def read_root():
 
 
 @app.post("/add-inventory/")
-async def generate_inventory(inventory: InventoryItems, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+async def generate_inventory(inventory: InventoryItems, session: DbSessionDeps, producer: ProducerDeps,authenticate:TokenDeps):
     """ Create a new inventory and send it to Kafka"""
+    if authenticate:
+        inventory_dict = {field: getattr(inventory, field) for field in inventory.dict()}
+        inventory_json = json.dumps(inventory_dict,cls=CustomJSONEncoder).encode("utf-8")
     
-    inventory_dict = {field: getattr(inventory, field) for field in inventory.dict()}
-    inventory_json = json.dumps(inventory_dict,cls=CustomJSONEncoder).encode("utf-8")
-    
-    print("inventory_JSON:", inventory_json)
-    # Produce message
-    await producer.send_and_wait(settings.KAFKA_INVENTORY_TOPIC, inventory_json)
-    
-    return inventory
-
+        print("inventory_JSON:", inventory_json)
+        # Produce message
+        await producer.send_and_wait(settings.KAFKA_INVENTORY_TOPIC, inventory_json)
+        
+        return inventory
+    raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")
 
 
 

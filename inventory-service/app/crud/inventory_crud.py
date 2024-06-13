@@ -8,8 +8,8 @@ from uuid import UUID
 
 def create_inventory_item(item: InventoryItems, session: Session):
 
-    print("\n\n saving date to database")
-    print("\n\n item in crud", item)
+    # print("\n\n saving date to database")
+    # print("\n\n item in crud", item)
     session.add(item)
     session.commit()
     session.refresh(item)
