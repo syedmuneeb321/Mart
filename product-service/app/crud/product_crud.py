@@ -44,6 +44,7 @@ def update_product_by_id(product_id: int, to_update_product_data:ProductUpdate, 
     product.sqlmodel_update(hero_data)
     session.add(product)
     session.commit()
+    session.refresh(product)
     return product
 
 def verify_product_by_id(product_id: int, session: Session):

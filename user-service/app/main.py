@@ -11,7 +11,7 @@ import json
 
 from app import settings
 from app.db_engine import engine
-from app.models.user_model import User,UserPublic,UserCreate #ProductUpdate
+from app.models.user_model import User,UserPublic,UserTokenPublic,UserCreate #ProductUpdate
 from app.crud.user_crud import create_user,user_login,role_assign_by_admin,CurrentUser,get_all_users,update_user
 from app.deps import get_session, get_kafka_producer,DBSessionDep
 
@@ -71,6 +71,11 @@ def get_single_product(user_data:UserCreate,session:DBSessionDep):
 @app.get('/user/me',response_model=UserPublic)
 async def get_user_me(user:CurrentUser):
     return user
+
+@app.get('/token-verify',response_model=UserTokenPublic)
+async def token_verify(user:CurrentUser):
+    return user
+
 
 @app.get("/get-all-user",response_model=list[UserPublic])
 def all_user(users:Annotated[UserPublic,Depends(get_all_users)]):

@@ -26,6 +26,9 @@ class UserCreate(BaseUser):
 class UserPublic(BaseUser):
     id: int 
 
+class UserTokenPublic(BaseUser):
+    id: int 
+    role: Role
 
 
 class UserUpdate(SQLModel):

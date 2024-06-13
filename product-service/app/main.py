@@ -12,7 +12,7 @@ from app import settings
 from app.db_engine import engine
 from app.models.product_model import Product, ProductUpdate
 from app.crud.product_crud import add_new_product, get_all_products, get_product_by_id, delete_product_by_id, update_product_by_id
-from app.deps import get_session, get_kafka_producer
+from app.deps import get_session, get_kafka_producer,LoginForAccessTokenDeps,CurrentUserDeps,DbSessionDeps,GetProducerDeps
 
 from app.consumer.product_consumer import consume_product_messages
 from app.consumer.inventory_consumer import consume_inventory_messages
@@ -51,16 +51,28 @@ def read_root():
 
 
 @app.post("/manage-products/", response_model=Product)
-async def create_new_product(product: Product, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+async def create_new_product(product: Product, session: DbSessionDeps, producer: GetProducerDeps,user:CurrentUserDeps):
+
     """ Create a new product and send it to Kafka"""
-    
-    product_dict = {field: getattr(product, field) for field in product.dict()}
-    product_json = json.dumps(product_dict).encode("utf-8")
-    print("product_JSON:", product_json)
+    if user['role'] == "admin":
+
+        product_dict = {field: getattr(product, field) for field in product.dict()}
+        product_json = json.dumps(product_dict).encode("utf-8")
+        print("product_JSON:", product_json)
     # Produce message
-    await producer.send_and_wait(settings.KAFKA_PRODUCT_TOPIC, product_json)
+        await producer.send_and_wait(settings.KAFKA_PRODUCT_TOPIC, product_json)
     # new_product = add_new_product(product, session)
-    return product
+        return product
+    else:
+        raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")
+
+@app.post("/auth/login")
+async def login(form_data:LoginForAccessTokenDeps):
+    try:
+        return form_data
+    except Exception as e:
+        return e 
+
 
 @app.get("/manage-products/all", response_model=list[Product])
 def call_all_products(session: Annotated[Session, Depends(get_session)]):
@@ -78,23 +90,36 @@ def get_single_product(product_id: int, session: Annotated[Session, Depends(get_
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/manage-products/{product_id}", response_model=dict)
-def delete_single_product(product_id: int, session: Annotated[Session, Depends(get_session)]):
-    
-    
+def delete_single_product(product_id: int, session:DbSessionDeps,user:CurrentUserDeps):
     """ Delete a single product by ID"""
-    try:
-        return delete_product_by_id(product_id=product_id, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    if user['role'] == 'admin':
+        try:
+            return delete_product_by_id(product_id=product_id, session=session)
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+    raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")
     
 @app.patch("/manage-products/{product_id}", response_model=Product)
-def update_single_product(product_id: int, product: ProductUpdate, session: Annotated[Session, Depends(get_session)]):
+def update_single_product(product_id: int, product: ProductUpdate, session:DbSessionDeps, user:CurrentUserDeps):
     """ Update a single product by ID"""
-    try:
-        return update_product_by_id(product_id=product_id, to_update_product_data=product, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if user['role'] == 'admin':
+        
+        try:
+            return update_product_by_id(product_id=product_id, to_update_product_data=product, session=session)
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+    raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")    
+        
+    
+
+
+# @app.get("/user/me")
+# async def user_me(user:CurrentUserDeps):
+#     return user
