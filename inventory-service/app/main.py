@@ -149,37 +149,8 @@ def get_item_inventory(item_id:UUID,session:DbSessionDeps):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# @app.patch("/update-payment-status")
-# def update_payment_status(order_id:int,payment_status:PaymentStatus,session: Annotated[Session, Depends(get_session)]):
-
-#     try:
-#         return order_peyment_update(order_id=order_id,order_payment_status=payment_status,session=session)
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-        
-
-# @app.patch("/cancel-order")
-# def order_cancel(order_id:int,session: Annotated[Session, Depends(get_session)]):
-#     try:
-#         order_status:OrderStatus.cancelled
-#         return order_status_update(order_id=order_id,order_status=order_status,session=session)
-#     except HTTPException as e:
-#         e 
-#     except Exception as e:
-#         raise HTTPException(status_code=500,detail=str(e))
 
     
 
 
     
-# @app.patch("/manage-products/{product_id}", response_model=Product)
-# def update_single_product(product_id: int, product: ProductUpdate, session: Annotated[Session, Depends(get_session)]):
-#     """ Update a single product by ID"""
-#     try:
-#         return update_product_by_id(product_id=product_id, to_update_product_data=product, session=session)
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
-from app.models.order_model import Address,Order,OrderStatus,PaymentStatus
+from app.models.order_model import Address,UpdateAddress,Order,OrderStatus,PaymentStatus
 
 
 # Add a New order to the Database
@@ -20,6 +20,14 @@ def create_address(address_data: Address, session: Session):
     session.commit()
     session.refresh(address_data)
     return address_data
+
+
+def get_address(id:int,session:Session):
+    addresses = session.exec(select(Address).where(Address.user_id==id)).all()
+    return addresses
+
+def update_address(address_id:int,user_id:int,address:UpdateAddress,session:Session):
+    user_db_address = session.exec(select(Address))
 
 
 def get_customer_orders(customer_id: int,session:Session):

@@ -3,6 +3,27 @@ from datetime import datetime,timedelta,timezone
 from typing import List,Optional
 import enum
 
+
+class BaseAddress(SQLModel):
+    address: str 
+    city: str 
+    country: str 
+    zipcode: int 
+
+class Address(BaseAddress,table=True):
+    id: int| None = Field(default=None,primary_key=True)
+    user_id: int 
+    orders: List["Order"] = Relationship(back_populates="address")
+
+class CreateUserAddress(BaseAddress):
+    pass
+
+class UpdateAddress(SQLModel):
+    address: str | None = None
+    city: str | None = None
+    country: str | None = None
+    zipcode: int | None = None
+
 class OrderStatus(str,enum.Enum):
     pending = "pending"
     process = "process"
@@ -12,21 +33,6 @@ class OrderStatus(str,enum.Enum):
 class PaymentStatus(str,enum.Enum):
     paid = "paid"
     unpaid = "unpaid"
-
-
-
-class Address(SQLModel,table=True):
-    id: int| None = Field(default=None,primary_key=True)
-    address: str 
-    city: str 
-    country: str 
-    zipcode: int 
-    
-    user_id: int 
-    
-    orders: List["Order"] = Relationship(back_populates="address")
-
-
 
 # # class orderItems(SQLModel,table=True):
 # #     id: int| None = Field(default=None,primary_key=True)

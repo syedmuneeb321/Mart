@@ -11,9 +11,10 @@ import json
 
 from app import settings
 from app.db_engine import engine
-from app.models.order_model import Address,Order,OrderStatus,PaymentStatus
+from app.models.order_model import Address,CreateUserAddress,UpdateAddress,Order,OrderStatus,PaymentStatus
 from app.crud.order_crud import create_address,create_order,get_customer_orders,order_status_update,order_peyment_update
-from app.deps import get_session, get_kafka_producer
+from app.crud.order_crud import get_address
+from app.deps import get_session, get_kafka_producer,LoginForAccessTokenDep,GetCurrentUserDep,DBSessionDep
 
 from app.consumer.payment_consumer import payment_varify_consumer
 from app.consumer.address_consumer import consume_address_messages
@@ -61,19 +62,72 @@ def read_root():
     return {"Hello": "order Service"}
 
 
-@app.post("/add-address/", response_model=Address)
-async def generate_address(address: Address, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+@app.post("/auth/login")
+def login(token:LoginForAccessTokenDep):
+    return token
+
+# @app.get("/current-user")
+# def current_user(user:GetCurrentUserDep):
+#     return user
+
+
+@app.post("/add-address/")
+async def generate_address(address: CreateUserAddress, session:DBSessionDep,user:GetCurrentUserDep):
     """ Create a new product and send it to Kafka"""
-    
-    address_dict = {field: getattr(address, field) for field in address.dict()}
+    print(user['id'])
+    user_address = Address.model_validate(address,update={"user_id":user['id']})
+    # print(user_address)
+    return create_address(address_data=user_address,session=session)
+    # return user_address
+
+
+    # address_dict = {field: getattr(address, field) for field in address.dict()}
    
-    address_json = json.dumps(address_dict).encode("utf-8")
+    # address_json = json.dumps(address_dict).encode("utf-8")
     
-    print("address_JSON:", address_json)
-    # Produce message
-    await producer.send_and_wait("address-topic", address_json)
+    # print("address_JSON:", address_json)
+    # # Produce message
+    # await producer.send_and_wait("address-topic", address_json)
     
-    return address
+    # return address
+
+
+@app.get("/get-address/")
+def get_user_address(session: DBSessionDep,user:GetCurrentUserDep):
+    """ Get a single product by ID"""
+    try:
+        return get_address(id=user['id'], session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+app.get("update-address")
+def update_user_address(address_id:int,address:UpdateAddress ,user:GetCurrentUserDep,session:DBSessionDep):
+    
+    
+    try:
+        pass
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+    
+
+
+@app.get("/my-orders/")
+def get_orders(session: DBSessionDep,user:GetCurrentUserDep):
+    """ Get a single product by ID"""
+    try:
+        return get_customer_orders(customer_id=user['id'], session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.post("/create-order/")
@@ -90,16 +144,6 @@ async def order_generate(order: Order, session: Annotated[Session, Depends(get_s
     
     return order
 
-
-@app.get("/my-orders/")
-def get_orders(customer_id: int, session: Annotated[Session, Depends(get_session)]):
-    """ Get a single product by ID"""
-    try:
-        return get_customer_orders(customer_id=customer_id, session=session)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.patch("/update-order-status")
