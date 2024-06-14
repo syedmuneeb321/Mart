@@ -24,6 +24,11 @@ class UpdateAddress(SQLModel):
     country: str | None = None
     zipcode: int | None = None
 
+
+
+
+
+
 class OrderStatus(str,enum.Enum):
     pending = "pending"
     process = "process"
@@ -40,22 +45,23 @@ class PaymentStatus(str,enum.Enum):
 # #     price: float  
 # #     quantity: int 
 
-
-
-class Order(SQLModel,table=True):
-    id: int| None = Field(default=None,primary_key=True)
-    customer_id: int 
+class BaseOrder(SQLModel):
     product_id: int  
     total_price: float
     quantity: int = Field(default=1)
     address_id: int = Field(foreign_key ="address.id")
-    address: Address = Relationship(back_populates="orders")
 
+class Order(BaseOrder,table=True):
+    id: int| None = Field(default=None,primary_key=True)
+    customer_id: int 
+    address: Address = Relationship(back_populates="orders")
     status:OrderStatus = Field(default=OrderStatus.pending)
     payment_status: PaymentStatus = Field(default=PaymentStatus.unpaid)
 
 
     
+class CreateOrder(BaseOrder):
+    pass 
 
-    
+
     

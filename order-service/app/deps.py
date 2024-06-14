@@ -31,7 +31,7 @@ DBSessionDep = Annotated[Session, Depends(get_session)]
 
 
 def get_current_user(token: Annotated[str | None, Depends(oauth2_scheme)]):
-    print(f"Token: {token}")
+    # print(f"Token: {token}")
 
     if token is None:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -41,7 +41,7 @@ def get_current_user(token: Annotated[str | None, Depends(oauth2_scheme)]):
 
     response = requests.get(url, headers=headers)
 
-    print( "AUTHENTICATED_USER_DATA" ,response.json())
+    # print( "AUTHENTICATED_USER_DATA" ,response.json())
 
     if response.status_code == 200:
         user_data = response.json()

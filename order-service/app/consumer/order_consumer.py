@@ -8,7 +8,7 @@ from app.models.order_model import Address,Order
 
 
 
-async def consume_order_messages(topic, bootstrap_servers,group_id):
+async def consume_product_order_messages(topic, bootstrap_servers,group_id):
     # Create a consumer instance.
     consumer = AIOKafkaConsumer(
         topic,
@@ -34,7 +34,7 @@ async def consume_order_messages(topic, bootstrap_servers,group_id):
                 db_insert_order = create_order(
                         order_data=Order(**order_data), session=session)
                 
-                print("DB_INSERT_PRODUCT", db_insert_order)
+                # print("DB_INSERT_PRODUCT", db_insert_order)
 
             
 

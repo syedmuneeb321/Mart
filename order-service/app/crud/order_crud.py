@@ -4,8 +4,10 @@ from app.models.order_model import Address,UpdateAddress,Order,OrderStatus,Payme
 
 
 # Add a New order to the Database
-def create_order(order_data: Order, session: Session):
+def create_order(order_data:Order, session: Session):
     print("Adding order to Database")
+    print(f'Order Data',order_data)
+    # data = Order.model_validate(order_data)
     session.add(order_data)
     session.commit()
     session.refresh(order_data)
@@ -27,8 +29,28 @@ def get_address(id:int,session:Session):
     return addresses
 
 def update_address(address_id:int,user_id:int,address:UpdateAddress,session:Session):
-    user_db_address = session.exec(select(Address))
 
+    user_db_address = session.exec(select(Address).where(Address.id==address_id).where(Address.user_id==user_id)).one_or_none()
+
+    if user_db_address is None:
+        raise HTTPException(status_code=404,detail='address not Found')
+    
+    address_data = address.model_dump(exclude_unset=True)
+    user_db_address.sqlmodel_update(address_data)
+    session.add(user_db_address)
+    session.commit()
+    session.refresh(user_db_address)
+    
+    return user_db_address
+
+def delete_address(address_id:int,user_id:int,session:Session):
+    user_db_address = session.exec(select(Address).where(Address.user_id==user_id).where(Address.id==address_id)).one_or_none()
+    if user_db_address is None:
+        raise HTTPException(status_code=404,detail='address not Found')
+    
+    session.delete(user_db_address)
+    session.commit()
+    return {"message":"address successfully removed"}
 
 def get_customer_orders(customer_id: int,session:Session):
     orders = session.exec(select(Order).where(Order.customer_id==customer_id)).all()
@@ -36,8 +58,8 @@ def get_customer_orders(customer_id: int,session:Session):
 
 
 
-def order_status_update(order_id:int,order_status:OrderStatus,session:Session):
-    order = session.get(Order,order_id)
+def order_status_update(order_id:int,order_status:OrderStatus,user_id:int,session:Session):
+    order = session.exec(select(Order).where(Order.id == order_id).where(Order.customer_id==user_id)).one_or_none()
     order.status = order_status
     session.add(order)
     session.commit()

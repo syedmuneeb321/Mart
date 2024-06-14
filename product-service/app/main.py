@@ -16,6 +16,8 @@ from app.deps import get_session, get_kafka_producer,LoginForAccessTokenDeps,Cur
 
 from app.consumer.product_consumer import consume_product_messages
 from app.consumer.inventory_consumer import consume_inventory_messages
+from app.consumer.order_consumer import consumer_order_messages
+
 def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
 
@@ -33,6 +35,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         
     task = asyncio.create_task(consume_inventory_messages(
         "inventory-events", 'broker:19092'))
+    task = asyncio.create_task(consumer_order_messages(
+        "order-events", 'broker:19092',"order-consumer-id"))
     create_db_and_tables()
     yield
 
