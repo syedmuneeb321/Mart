@@ -25,7 +25,7 @@ async def payment_consume_messages(topic, bootstrap_servers,group_id):
         group_id=group_id,
         # auto_offset_reset="earliest",
     )
-    print(f"life span send topic:{topic}")
+    # print(f"life span send topic:{topic}")
     # Start the consumer.
     await consumer.start()
     try:
@@ -34,21 +34,15 @@ async def payment_consume_messages(topic, bootstrap_servers,group_id):
             print("RAW")
             print(f"Received message on topic {message.topic}")
 
-            order_data = json.loads(message.value.decode(),object_hook=custom_decoder)
+            payment_data = json.loads(message.value.decode(),object_hook=custom_decoder)
             # print("TYPE", (type(order_data)))
-            print(f"Data {order_data}")
+            print(f"Data {payment_data}")
             
-            # print(f"inventory data id type: {type(order_data['id'])}")
-            # order_data['id'] = UUID(order_data['id'])
-            
-            # print(type(order_data['id']))
-            # print(order_data['id'])
-            # data = InventoryItems(**order_data)
-            # print(data.id)
+          
             with next(get_session()) as session:
                 print("save payment data into database")
                 db_insert_inventory = create_order_payment(
-                    payment=Payment(**order_data), session=session)
+                    payment=Payment(**payment_data), session=session)
             
     except Exception as e:
         print(e)

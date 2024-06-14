@@ -12,9 +12,9 @@ from typing import List
 
 from app import settings
 from app.db_engine import engine
-from app.models.payment_model import Payment,PaymentStatus 
+from app.models.payment_model import Payment,PaymentCreate,PaymentStatus,PaymentPublic 
 from app.crud.payment_crud import payment_status_update
-from app.deps import get_session, get_kafka_producer
+from app.deps import get_session, get_kafka_producer,DBSessionDep,ProducerDep,LoginForAccessTokenDep,GetCurrentUserDep
 from datetime import datetime
 from app.utils.encode_and_decode import CustomJSONEncoder,custom_decoder
 from app.consumer.payment_consumer import payment_consume_messages
@@ -43,7 +43,7 @@ def create_db_and_tables() -> None:
 # The first part of the function, before the yield, will
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    print("Creating tables...")
+    print("Creating tables.")
 
     payment_task = asyncio.create_task(payment_consume_messages(
         topic="order-topic-response", bootstrap_servers='broker:19092',group_id="payment_consumer_group"))
@@ -68,13 +68,19 @@ def read_root():
     return {"Hello": "payment service"}
 
 
+@app.post("/auth/login")
+def login(token:LoginForAccessTokenDep):
+    return token
+
+
+
 
 @app.post("/order-payment")
-async def order_payment(payment: Payment, session: Annotated[Session, Depends(get_session)], producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+async def order_payment(payment: PaymentCreate,user:GetCurrentUserDep,producer: ProducerDep):
     """ Create a new inventory and send it to Kafka"""
     try:
-        
-        payment_dict = {field: getattr(payment, field) for field in payment.dict()}
+        payment_data = Payment.model_validate(payment,update={"customer_id":user['id']})
+        payment_dict = {field: getattr(payment_data, field) for field in payment_data.dict()}
         payment_json = json.dumps(payment_dict,cls=CustomJSONEncoder).encode("utf-8")
         print("payment_JSON:", payment_json)
         
@@ -82,7 +88,7 @@ async def order_payment(payment: Payment, session: Annotated[Session, Depends(ge
         # Produce message
         await producer.send_and_wait(settings.KAFKA_PAYMENT_TOPIC, payment_json)
     
-        return payment
+        return payment_dict
     except Exception as e:
         print(e)
     

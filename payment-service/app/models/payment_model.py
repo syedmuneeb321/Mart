@@ -16,19 +16,21 @@ class PaymentStatus(str,enum.Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
-
-class Payment(SQLModel,table=True):
-    id: UUID = Field(default_factory=uuid4,primary_key=True,nullable=False)
+class BasePayment(SQLModel):
     order_id: int 
     amount: float 
     payment_method: PaymentMethod 
-    payment_status: PaymentStatus = Field(default=PaymentStatus.PENDING)
-
-    transaction_id: str | None = None
     card_number: str|None = None 
     card_date: str | None = None 
     card_cvv: str | None = None
 
+
+
+class Payment(BasePayment,table=True):
+    id: UUID | None = Field(default_factory=uuid4,primary_key=True,nullable=False)
+    customer_id: int
+    payment_status: PaymentStatus = Field(default=PaymentStatus.PENDING)
+    transaction_id: str | None = None
     created_at: datetime | None = Field(default_factory=datetime.now)
     updated_at: datetime | None = Field(default_factory=datetime.now)
 
@@ -36,3 +38,9 @@ class Payment(SQLModel,table=True):
     #     json_encoders = {
     #         UUID: lambda v: str(v)
     #     }
+
+class PaymentCreate(BasePayment):
+    pass
+
+class PaymentPublic(BasePayment):
+    id: UUID
