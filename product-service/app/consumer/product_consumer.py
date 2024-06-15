@@ -32,7 +32,7 @@ async def consume_product_messages(topic, bootstrap_servers):
             product_data = json.loads(message.value.decode())
             print("TYPE", (type(product_data)))
             print(f"Product Data {product_data}")
-
+            del product_data['email']
             with next(get_session()) as session:
                 print("SAVING DATA TO DATABSE")
                 db_insert_product = add_new_product(

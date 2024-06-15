@@ -110,6 +110,14 @@ def update_user(user:CurrentUser,user_data:UserUpdate,session:DBSessionDep):
     session.refresh(user_db)
     return user_db
 
+def get_user_by_id(id:int,session:Session):
+    user = session.get(User,id)
+    if user is None:
+        raise HTTPException(status_code=404,detail="user not found")
+    
+    return user
+    
+
     
 
 # # Delete Product by ID

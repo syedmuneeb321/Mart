@@ -66,6 +66,20 @@ services:
     
     volumes:
       - ./payment-service:/code
+  
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile.dev 
+    container_name: NotificationCont 
+    ports:
+      - "8009:8000"
+    depends_on:
+      - broker 
+      # - postgres_payment_db
+    
+    volumes:
+      - ./notification-service:/code
 
     
   

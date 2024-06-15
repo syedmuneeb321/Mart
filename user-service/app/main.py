@@ -12,7 +12,7 @@ import json
 from app import settings
 from app.db_engine import engine
 from app.models.user_model import User,UserPublic,UserTokenPublic,UserCreate #ProductUpdate
-from app.crud.user_crud import create_user,user_login,role_assign_by_admin,CurrentUser,get_all_users,update_user
+from app.crud.user_crud import create_user,user_login,role_assign_by_admin,CurrentUser,get_all_users,update_user,get_user_by_id
 from app.deps import get_session, get_kafka_producer,DBSessionDep
 
 def create_db_and_tables() -> None:
@@ -91,6 +91,15 @@ def user_update(user: Annotated[UserPublic, Depends(update_user)]):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/get-user-by-id",response_model=UserPublic)
+def user_by_id(user_id:int,session:DBSessionDep):
+    try:
+        return get_user_by_id(id=user_id,session=session)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 

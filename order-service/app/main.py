@@ -133,6 +133,7 @@ async def order_generate(order:CreateOrder,user:GetCurrentUserDep, session: DBSe
         
         order_data = Order.model_validate(order,update={'customer_id':user['id']})
         order_dict = {field: getattr(order_data, field) for field in order_data.dict()}
+        order_dict['email'] = user['email']
         order_json = json.dumps(order_dict).encode("utf-8")
     
         print("order_JSON:", order_json)
@@ -158,10 +159,15 @@ def get_orders(session: DBSessionDep,user:GetCurrentUserDep):
 
 
 @app.patch("/update-order-status")
-def update_order_status(order_id:int,user_id:int,order_status:OrderStatus,user:GetCurrentUserDep,session: DBSessionDep):
+async def update_order_status(order_id:int,user_id:int,order_status:OrderStatus,user:GetCurrentUserDep,session: DBSessionDep,producer:ProducerDep):
     if user['role'] == 'admin':
         try:
-            return order_status_update(order_id=order_id,user_id=user_id,order_status=order_status,session=session)
+            order_data = order_status_update(order_id=order_id,user_id=user_id,order_status=order_status,session=session)
+            order_json = json.dumps(order_data.dict()).encode("utf-8")
+            print(f"order_json: {order_json}")
+            await producer.send_and_wait("order-status-event",order_json)
+            return order_data
+                        
         except HTTPException as e:
             raise e
         except Exception as e:

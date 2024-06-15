@@ -95,20 +95,24 @@ async def order_payment(payment: PaymentCreate,user:GetCurrentUserDep,producer: 
     
 
 @app.patch("/payment-status")
-async def payment_status(payment_id:UUID,payment_status:PaymentStatus,session: Annotated[Session, Depends(get_session)],producer: Annotated[AIOKafkaProducer, Depends(get_kafka_producer)]):
+async def payment_status(payment_id:UUID,payment_status:PaymentStatus,user:GetCurrentUserDep,session: DBSessionDep,producer:ProducerDep):
 
-    try: 
-        payment_info = payment_status_update(item_id=payment_id,payment_status=payment_status,session=session)
-        if payment_info.payment_status == PaymentStatus.COMPLETED:
-            payment_dict = {"order_id":payment_info.order_id,"payment_status":payment_info.payment_status}
-            payment_json = json.dumps(payment_dict).encode("utf-8")
-            await producer.send_and_wait("payment-status-topic",payment_json)
-            
-        return payment_info
-    except HTTPException as e:
-        raise e 
-    except Exception as e:
-        raise e
+    if user['role'] == 'admin':
+        try: 
+            payment_info = payment_status_update(item_id=payment_id,payment_status=payment_status,session=session)
+            if payment_info.payment_status == PaymentStatus.COMPLETED:
+                payment_dict = {"order_id":payment_info.order_id,"payment_status":payment_info.payment_status,"customer_id":payment_info.customer_id}
+                payment_json = json.dumps(payment_dict).encode("utf-8")
+                await producer.send_and_wait("payment-status-topic",payment_json)
+                
+            return payment_info
+        except HTTPException as e:
+            raise e 
+        except Exception as e:
+            raise e
+    else:
+        raise HTTPException(status_code=403,detail="The user doesn't have enough privileges")
+    
 
 
 

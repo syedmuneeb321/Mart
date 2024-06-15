@@ -7,8 +7,8 @@ from uuid import UUID
 
 
 def create_order_payment(payment: Payment, session: Session):
-    print("\n\n saving date to database")
-    print("\n\n payment in crud", payment)
+    # print("\n\n saving date to database")
+    # print("\n\n payment in crud", payment)
     session.add(payment)
     session.commit()
     session.refresh(payment)

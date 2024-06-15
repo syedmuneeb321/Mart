@@ -24,6 +24,7 @@ async def payment_varify_consumer(topic,bootstrap_servers,group_id):
 
             order_data = json.loads(message.value.decode(),object_hook=custom_decoder)
             # print("TYPE", (type(order_data)))
+            
             print(f"Data {order_data}")
             # print(f"id type check on order consumer: {type(order_data['id'])}")
             

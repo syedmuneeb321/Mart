@@ -26,6 +26,7 @@ async def consume_product_order_messages(topic, bootstrap_servers,group_id):
             print(f"Received message on topic {message.topic}")
 
             order_data = json.loads(message.value.decode())
+            del order_data['email']
             # print("TYPE", (type(order_data)))
             print(f"Data {order_data}")
             
