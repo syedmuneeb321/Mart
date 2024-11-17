@@ -49,7 +49,7 @@ Ensure you have the following installed:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-repo/ai-mart-platform.git
+   git clone https://github.com/syedmuneeb321/ai-mart-platform.git
    cd ai-mart-platform
    ```
 
