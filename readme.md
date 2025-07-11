@@ -1,6 +1,6 @@
 
 
-# **AI Mart Platform**
+# **Mart Platform**
 
 This project is a multi-service online mart API built using modern **microservices architecture**. Each service runs in its container and communicates asynchronously via Kafka. The services include user management, product catalog, order processing, inventory, payment, and notification systems.
 
@@ -119,12 +119,5 @@ docker-compose up --build
 
 ### **Kafka UI**
 You can monitor Kafka events at [http://localhost:8080](http://localhost:8080).
-
----
-
-## **Future Enhancements**
-1. Add CI/CD pipelines for automated testing and deployment.
-2. Implement centralized logging and monitoring.
-3. Scale services dynamically based on traffic.
 
 ---
